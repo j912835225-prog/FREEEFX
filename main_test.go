@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"math"
 	"net/http"
@@ -672,5 +673,18 @@ func TestOnlyCopiesCanBeTrashed(t *testing.T) {
 	}
 	if n := len(l.State().Items); n != 1 {
 		t.Fatalf("trashed copy still listed: %d", n)
+	}
+}
+
+func TestBadHeadersDoNotPanic(t *testing.T) {
+	// 位深 4、单声道：每帧 0 字节，算帧数不能除零
+	if n := (format{Ch: 1, Bits: 4, Len: 100}).frames(); n != 0 {
+		t.Fatalf("frames=%d", n)
+	}
+	// fmt 块报 4GB：应判坏文件，不照着分配
+	var b bytes.Buffer
+	b.WriteString("RIFF\x00\x00\x00\x00WAVEfmt \xff\xff\xff\xff")
+	if _, err := probeWav(bytes.NewReader(b.Bytes())); err == nil {
+		t.Fatal("want errFormat")
 	}
 }

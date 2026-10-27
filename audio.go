@@ -27,10 +27,11 @@ type format struct {
 }
 
 func (f format) frames() int64 {
-	if f.Ch == 0 || f.Bits == 0 {
+	bpf := int64(f.Ch * f.Bits / 8)
+	if bpf <= 0 {
 		return 0
 	}
-	return f.Len / int64(f.Ch*f.Bits/8)
+	return f.Len / bpf
 }
 
 func (f format) dur() float64 {
@@ -60,8 +61,11 @@ func probeWav(r io.ReadSeeker) (format, error) {
 		pos += 8
 		switch id {
 		case "fmt ":
+			if n < 16 || n > 1<<16 { // 头块不会上 64KB；坏文件报个大数就别照着分配
+				return f, errFormat
+			}
 			b := make([]byte, n)
-			if _, err := io.ReadFull(r, b); err != nil || n < 16 {
+			if _, err := io.ReadFull(r, b); err != nil {
 				return f, errFormat
 			}
 			tag := binary.LittleEndian.Uint16(b[0:2])
@@ -123,8 +127,11 @@ func probeAiff(r io.ReadSeeker) (format, error) {
 		pos += 8
 		switch id {
 		case "COMM":
+			if n < 18 || n > 1<<16 { // 头块不会上 64KB；坏文件报个大数就别照着分配
+				return f, errFormat
+			}
 			b := make([]byte, n)
-			if _, err := io.ReadFull(r, b); err != nil || n < 18 {
+			if _, err := io.ReadFull(r, b); err != nil {
 				return f, errFormat
 			}
 			f.Ch = int(binary.BigEndian.Uint16(b[0:2]))
