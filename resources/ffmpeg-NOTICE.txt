@@ -1,0 +1,21 @@
+FREEEFX 随包带一份 FFmpeg（https://ffmpeg.org），只用来解码与转换音频格式。
+
+FFmpeg 是 FFmpeg 开发者的作品，按 GNU Lesser General Public License 2.1 或更新版本发布，
+macOS 版许可全文见同目录 ffmpeg-LICENSE.txt（LGPL 2.1）。FREEEFX 以独立程序方式调用它，没有链接进 FREEEFX 本体。
+
+macOS 版
+  源码：https://ffmpeg.org/releases/ffmpeg-8.1.tar.xz（未改动）
+  SHA-256：b072aed6871998cce9b36e7774033105ca29e33632be5b6347f3206898e0756a
+  发布签名指纹：FCF9 86EA 15E6 E293 A564  4F10 B432 2F04 D676 58D8
+  编译参数：只开音频所需的解复用、解码、编码、复用；未开 --enable-gpl、--enable-nonfree。
+  逐条参数与可复现的编译脚本随 FREEEFX 工程保存（third_party/ffmpeg/编译-mac.sh），需要可索取。
+
+Windows 版
+  取自 BtbN/FFmpeg-Builds 的 LGPL 构建（ffmpeg-master-latest-win64-lgpl，版本 N-128094-g31855b2a70），
+  未开 --enable-gpl／--enable-nonfree，开了 --enable-version3，故许可为 LGPL 3 或更新版本，
+  全文见同目录 ffmpeg-LICENSE-LGPLv3.txt 与其所补充的 ffmpeg-LICENSE-GPLv3.txt。
+  源码：https://github.com/FFmpeg/FFmpeg/commit/31855b2a70
+  构建脚本：https://github.com/BtbN/FFmpeg-Builds
+
+你可以用自己编译的 FFmpeg 替换包内的这一份：macOS 在 FREEEFX.app/Contents/Resources/bin/ffmpeg，
+Windows 在 FREEEFX.exe 同目录的 bin\ffmpeg.exe。

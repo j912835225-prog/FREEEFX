@@ -1,0 +1,6 @@
+.DS_Store
+.mygo/
+dist/
+resources/*/bin/
+third_party/ffmpeg/*.tar.xz
+third_party/ffmpeg/*.tar.xz.asc

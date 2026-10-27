@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FREEEFX</title>
+<script>if(window.mygo&&mygo.platform==='darwin')document.documentElement.classList.add('vib')</script>
+<style>
+:root{color-scheme:light;--bg:#fbfbfa;--side:#f4f4f2;--line:#e8e8e5;--text:#1c1c1b;--mute:#8d8d88;--faint:#c4c4bf;--sel:#e9e9e5;--hover:#f1f1ee;--wave:#cdcdc8;--acc:#ff5b1f;--shadow:0 10px 30px rgba(0,0,0,.08)}
+:root[data-theme=dark]{color-scheme:dark;--bg:#151515;--side:#191919;--line:#272726;--text:#ececea;--mute:#7d7d79;--faint:#4a4a47;--sel:#262625;--hover:#1e1e1d;--wave:#3c3c3a;--shadow:0 10px 30px rgba(0,0,0,.4)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#151515;--side:#191919;--line:#272726;--text:#ececea;--mute:#7d7d79;--faint:#4a4a47;--sel:#262625;--hover:#1e1e1d;--wave:#3c3c3a;--shadow:0 10px 30px rgba(0,0,0,.4)}}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font:13px/1.45 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Segoe UI","Microsoft YaHei UI","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased;display:grid;grid-template:"side top" 52px "side main" 1fr "side player" auto/224px 1fr;overflow:hidden;user-select:none;-webkit-user-select:none;cursor:default}
+button{font:inherit;color:inherit;background:none;border:0;cursor:default}
+header{grid-area:top;display:flex;align-items:center;gap:10px;padding:0 calc(14px + var(--mygo-titlebar-inset-right,0px)) 0 18px;border-bottom:1px solid var(--line);--app-region:drag}
+.mark{flex:none;height:52px;display:flex;align-items:center;padding-left:max(18px,calc(var(--mygo-titlebar-inset-left,0px) + 12px));font-weight:600;letter-spacing:.08em;--app-region:drag}
+.search{flex:1;max-width:440px;height:30px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);padding:0 10px;font:inherit;outline:none}
+.search:focus{border-color:var(--mute)}
+.prog{color:var(--mute);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;transition:opacity .4s}
+.prog.off{opacity:0}
+.sp{flex:1}
+.btn{height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--line)}
+.btn:hover{background:var(--hover)}
+.icon{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--mute)}
+.icon:hover{background:var(--hover);color:var(--text)}
+.menu{position:relative}
+.pop{position:absolute;right:0;top:36px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:4px;min-width:150px;box-shadow:var(--shadow);display:none;z-index:20}
+.menu.open .pop{display:block}
+.pop hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
+.pop .lab{color:var(--mute);font-size:11px;padding:4px 10px 2px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pop button,.ctx button{display:block;width:100%;text-align:left;padding:6px 10px;border-radius:6px;white-space:nowrap}
+.pop button:hover,.ctx button:hover{background:var(--hover)}
+aside{grid-area:side;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#side{flex:1;overflow:auto;padding:4px 8px 24px}
+/* Mac：侧栏透出毛玻璃，右边内容照旧实底 */
+html.vib body{background:transparent}
+html.vib aside{background:transparent}
+html.vib header,html.vib main,html.vib footer{background:var(--bg)}
+html.vib .nav:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
+html.vib .nav.on{background:color-mix(in srgb,var(--text) 10%,transparent)}
+.h{font-size:11px;color:var(--mute);padding:16px 10px 5px;letter-spacing:.04em;cursor:default;user-select:none;display:flex;align-items:center;gap:4px}
+.grp:first-child .h{padding-top:4px}
+.h .hc{display:inline-block;width:10px;font-size:7px;transform:rotate(90deg);transition:transform .12s}
+.grp.fold .h .hc{transform:none}
+.h:hover{color:var(--fg)}
+.grp.drag{opacity:.4}
+.grp.over-a{box-shadow:inset 0 2px 0 var(--acc)}
+.grp.over-b{box-shadow:inset 0 -2px 0 var(--acc)}
+.nav{display:flex;align-items:center;height:27px;padding:0 10px;border-radius:6px;gap:6px}
+.nav:hover{background:var(--hover)}
+.nav.on{background:var(--sel)}
+.nav .n{margin-left:auto;color:var(--mute);font-variant-numeric:tabular-nums;font-size:12px}
+.nav .x,.nav .car{color:var(--mute);width:14px;text-align:center;flex:none}
+.nav .x{display:none;margin-left:2px}
+.nav:hover .x,.nav .x.arm{display:block}
+.nav .x.arm{width:auto;color:var(--acc);white-space:nowrap;font-size:12px}
+.toast.act{pointer-events:auto}
+.toast button{margin-left:12px;background:none;border:0;color:var(--acc);font:inherit;cursor:pointer;padding:0}
+.nav:hover .x+.n,.nav .x:hover{color:var(--text)}
+.nav .car{margin-left:-6px;font-size:9px;transition:transform .15s}
+.nav .car.open{transform:rotate(90deg)}
+.nav .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+main{grid-area:main;display:grid;grid-template-rows:30px 1fr;min-height:0;position:relative}
+.cols,.row{display:grid;grid-template-columns:18px minmax(0,1fr) 72px minmax(0,170px) 78px 96px 52px;align-items:center;gap:10px;padding:0 18px 0 10px}
+.cols{border-bottom:1px solid var(--line);color:var(--mute);font-size:11px;letter-spacing:.04em}
+.cols span[data-sort]:hover{color:var(--text)}
+.cols .on{color:var(--text)}
+.cols .r{text-align:right}
+#list{overflow:auto;position:relative;outline:none}
+#pad{position:relative}
+.row{position:absolute;left:0;right:0;height:34px}
+.row:hover{background:var(--hover)}
+.row.on{background:var(--sel)}
+.row .pl{width:3px;height:14px;border-radius:2px;background:var(--acc);justify-self:center;visibility:hidden}
+.row.now .pl{visibility:visible}
+.row.now.paused .pl{opacity:.35}
+.row canvas{width:72px;height:20px;display:block}
+.row .t{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.row .t small{color:var(--mute);margin-left:8px;font-size:12px}
+.row .kw{font-style:normal;color:var(--acc);margin-left:8px;font-size:12px;cursor:text}
+.row .kw.add{color:var(--faint);visibility:hidden;padding:0 4px}
+.row:hover .kw.add,.row.on .kw.add{visibility:visible}
+.row .kwin{font:inherit;font-size:12px;color:var(--text);background:var(--bg);border:1px solid var(--acc);border-radius:4px;padding:1px 5px;margin-left:8px;width:240px;outline:none;user-select:text;-webkit-user-select:text}
+.row .f,.row .d,.row .fm{color:var(--mute);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-variant-numeric:tabular-nums;font-size:12px}
+.row .d{text-align:right}
+.row.bad{opacity:.4}
+.stars{display:flex;gap:1px;font-size:11px;letter-spacing:0;color:var(--faint)}
+.stars i{font-style:normal;width:13px;text-align:center}
+.stars i.on{color:var(--acc)}
+.row .stars i{visibility:hidden}
+.row .stars.has i,.row:hover .stars i{visibility:visible}
+.empty{position:absolute;inset:24px;border:1.5px dashed var(--line);border-radius:16px;display:grid;place-content:center;justify-items:center;gap:14px;color:var(--mute)}
+.empty .big{font-size:15px;color:var(--text)}
+.empty .acts{display:flex;gap:8px}
+.none{position:absolute;top:30px;left:0;right:0;padding:48px;color:var(--mute);text-align:center}
+footer{grid-area:player;border-top:1px solid var(--line);display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 18px 12px}
+footer[hidden]{display:none}
+.play{width:36px;height:36px;border-radius:50%;background:var(--text);color:var(--bg);display:grid;place-items:center;font-size:12px}
+.mid{min-width:0}
+.top{display:flex;gap:12px;align-items:baseline;margin-bottom:6px}
+.top .nm{font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
+.top .meta{color:var(--mute);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.top .sp{flex:1}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;flex:none}
+.seg button{padding:1px 8px;font-size:11px;color:var(--mute)}
+.seg button.on{background:var(--sel);color:var(--text)}
+.top .stars{font-size:13px;cursor:default;flex:none}
+.top .stars i{width:15px}
+.top .stars i:hover{color:var(--acc)}
+#view{display:block;width:100%;height:84px;border-radius:4px}
+.note{width:100%;margin-top:6px;border:0;border-bottom:1px solid transparent;background:transparent;color:var(--text);font:inherit;outline:none;padding:2px 0}
+.note::placeholder{color:var(--mute)}
+.note:focus{border-bottom-color:var(--line)}
+.right{display:grid;gap:8px;justify-items:end;align-self:stretch;align-content:space-between;padding:2px 0}
+.time{text-align:right;color:var(--mute);font-variant-numeric:tabular-nums}
+.ctl{display:flex;gap:6px;align-items:center}
+.tg{font-size:11px;color:var(--mute);padding:1px 7px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
+.tg:hover{color:var(--text)}
+.tg.on{color:var(--text);background:var(--sel)}
+#vol{width:72px;accent-color:var(--mute)}
+.reg{display:flex;gap:8px;align-items:baseline;flex:none;color:var(--mute);font-size:12px;font-variant-numeric:tabular-nums}
+.reg[hidden]{display:none}
+.drop{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 82%,transparent);display:none;place-content:center;font-size:15px;z-index:30;backdrop-filter:blur(2px)}
+.drop.on{display:grid}
+.drop span{border:1.5px dashed var(--acc);border-radius:16px;padding:48px 72px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:40;max-width:70vw}
+.toast.on{opacity:1}
+.ctx{position:fixed;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:var(--shadow);z-index:35;min-width:170px}
+.ctx hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
+.ctx .lab{color:var(--mute);font-size:11px;padding:4px 10px 2px}
+</style>
+</head>
+<body>
+<header>
+  <input class="search" id="q" placeholder="搜索名字、文件夹、你写的话" spellcheck="false" autocomplete="off">
+  <span class="prog off" id="prog"></span>
+  <div class="sp"></div>
+  <div class="menu" id="menu">
+    <button class="btn" id="load">载入</button>
+    <div class="pop">
+      <button data-pick="dir">文件夹…</button>
+      <button data-pick="files">音频文件…</button>
+      <hr><div class="lab" id="outp"></div>
+      <button id="outpick">换导出夹…</button>
+      <button id="outshow">在访达中显示导出夹</button>
+    </div>
+  </div>
+  <button class="icon" id="theme" title="明暗">◐</button>
+</header>
+<aside><div class="mark">FREEEFX</div><div id="side"></div></aside>
+<main>
+  <div class="cols" id="cols"><span></span><span data-sort="name">名字</span><span></span><span>文件夹</span><span data-sort="star">星</span><span>格式</span><span data-sort="dur" class="r">时长</span></div>
+  <div id="list" tabindex="-1"><div id="pad"></div></div>
+</main>
+<footer id="player" hidden>
+  <button class="play" id="pp">▶</button>
+  <div class="mid">
+    <div class="top"><span class="nm" id="pn"></span><span class="meta" id="pm"></span><span class="sp"></span><span class="reg" id="reg" hidden><span id="regt"></span><button class="tg" id="regx">导出这段</button></span><span class="stars" id="pst"></span><span class="seg" id="seg"><button data-v="wave">波形</button><button data-v="spec">频谱</button></span></div>
+    <canvas id="view"></canvas>
+    <input class="note" id="note" placeholder="写一句：它是什么声音" spellcheck="false">
+  </div>
+  <div class="right"><div class="time" id="tm">0:00</div><div class="ctl"><button class="tg" id="loop">循环</button><button class="tg" id="auto">点选即播</button><input type="range" id="vol" min="0" max="1" step="0.01" title="音量"></div></div>
+</footer>
+<div class="toast" id="toast"></div>
+<div class="drop" id="drop"><span>松手放进来</span></div>
+<script>
+const $=s=>document.querySelector(s)
+const ROW=34, MUSIC=30
+const inApp=!!window.mygo
+const api=inApp?{call:(m,...a)=>mygo.call(m,...a),on:(n,f)=>mygo.on(n,f)}:(()=>{
+  const es=new EventSource('/events')
+  return{call:(m,...a)=>fetch('/api/'+m,{method:'POST',body:JSON.stringify(a)}).then(r=>r.ok?r.json():r.text().then(t=>Promise.reject(new Error(t)))),on:(n,f)=>es.addEventListener(n,e=>f(JSON.parse(e.data)))}
+})()
+const isWin=inApp&&mygo.platform==='win32'
+const SND=inApp?(isWin?'http://snd.localhost/':'snd://x/'):'/snd/'
+const canDragOut=inApp // 拖出都走原生：Mac 是 AppKit，Windows 是 OLE（文件列表，达芬奇、Pro Tools 都认）
+
+const S={items:[],byId:new Map(),roots:[],cats:[],conv:[],view:{k:'all'},q:'',sort:{k:'',dir:1},list:[],sel:new Set(),anchor:null,cur:null,now:null,open:new Set(JSON.parse(localStorage.getItem('open')||'[]')),fold:new Set(JSON.parse(localStorage.getItem('fold')||'[]')),mode:localStorage.getItem('mode')||'wave',detail:null,reg:null,out:'',loop:localStorage.getItem('loop')==='1',auto:localStorage.getItem('auto')!=='0',vol:+(localStorage.getItem('vol')??0.9)}
+const audio=new Audio()
+const fmt=s=>{if(!(s>0))return'–';if(s<10)return s.toFixed(1)+'s';s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+const nameOf=it=>{const b=it.p.slice(it.p.lastIndexOf('/')+1);const i=b.lastIndexOf('.');return i>0?b.slice(0,i):b}
+const dirOf=it=>{const i=it.p.lastIndexOf('/');return i>0?it.p.slice(0,i):''}
+const coll=new Intl.Collator('zh',{numeric:true})
+let tt=0
+function toast(m,act){const t=$('#toast');t.textContent=m;t.classList.toggle('act',!!act)
+  if(act){const b=document.createElement('button');b.textContent=act.t;b.onclick=()=>{t.classList.remove('on','act');act.f()};t.append(b)}
+  t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on','act'),act?6000:2800)}
+// 移出库要点两下：× 第一下只变成「再点一下移出」，3 秒内再点才移；移完提示里能撤销
+let armX=null,armT
+const armed=v=>armX&&S.roots[v.r]&&S.roots[v.r].path===armX
+
+// ---------- 数据 ----------
+function prep(it){
+  it.name=nameOf(it);it.dir=dirOf(it)
+  const r=S.roots[it.r]
+  it.rootName=r?(r.file?'散件':r.name):''
+  it.hay=(it.name+' '+it.dir+' '+it.rootName+' '+(it.no||'')+' '+it.k.map(i=>S.cats[i]).join(' ')+' '+it.e+' '+(it.tx||'')).toLowerCase()
+  return it
+}
+async function reload(){
+  const s=await api.call('Lib.State')
+  S.roots=s.roots;S.cats=s.cats;S.conv=s.conv;S.out=s.out||'';showOut()
+  S.items=s.items.map(prep)
+  S.byId=new Map(S.items.map(it=>[it.id,it]))
+  for(const id of [...S.sel])if(!S.byId.has(id))S.sel.delete(id)
+  if(S.cur&&!S.byId.has(S.cur))S.cur=null
+  if(S.view.k==='root'&&!S.roots[S.view.r])S.view={k:'all'}
+  refresh()
+}
+function patch(list){
+  for(const u of list){const it=S.byId.get(u.id);if(!it)continue;const no=it.no;Object.assign(it,u);if(u.no!==undefined&&u.no!==no)prep(it)}
+  refreshSoon()
+}
+let rq=0
+function refreshSoon(){if(!rq)rq=setTimeout(()=>{rq=0;refresh()},400)}
+
+// ---------- 左栏 ----------
+const smart={
+  all:{t:'全部',f:()=>true},
+  sfx:{t:'音效',f:it=>it.d>0&&it.d<MUSIC},
+  music:{t:'音乐',f:it=>it.d>=MUSIC},
+  starred:{t:'打过分',f:it=>it.st>0},
+  top:{t:'五星',f:it=>it.st===5},
+  unheard:{t:'没听过',f:it=>!it.pl},
+  recent:{t:'最近加入',f:it=>it.ad>=S.recentAt},
+  // 一击：起音不到 50 毫秒，真正响着（离最响不到 20 dB）的时间不到 0.4 秒；鼓、敲、点按都在这
+  hit:{t:'一击',f:it=>it.a&&it.d>0&&it.d<4&&(it.at||0)<=0.05&&(it.ds||0)*it.d<0.4},
+  sus:{t:'持续',f:it=>it.a&&it.d>=2&&(it.ds||0)>0.7},
+  low:{t:'低沉',f:it=>it.a&&(it.lo||0)>0.5},
+  bright:{t:'明亮',f:it=>it.a&&(it.hi||0)>0.25},
+  quiet:{t:'很轻',f:it=>it.a&&it.rm>-180&&it.rm<-38},
+  clip:{t:'可能削波',f:it=>it.a&&it.pk>=-0.05},
+}
+function viewTest(v){
+  if(smart[v.k])return smart[v.k].f
+  if(v.k==='cat')return it=>it.k.includes(v.c)
+  if(v.k==='root')return v.sub?it=>it.r===v.r&&(it.dir===v.sub||it.dir.startsWith(v.sub+'/')):it=>it.r===v.r
+  if(v.k==='loose')return it=>S.roots[it.r]&&S.roots[it.r].file
+  return()=>true
+}
+const same=(a,b)=>a.k===b.k&&a.c===b.c&&a.r===b.r&&(a.sub||'')===(b.sub||'')
+function renderSide(){
+  const items=S.items
+  let mx=0;for(const it of items)if(it.ad>mx)mx=it.ad
+  S.recentAt=mx-24*3600
+  const cnt=k=>{const f=smart[k].f;let n=0;for(const it of items)if(f(it))n++;return n}
+  const catN=new Array(S.cats.length).fill(0)
+  for(const it of items)for(const c of it.k)catN[c]++
+  // 文件夹树：每层记条数（含下面各层）与子夹，任意深
+  const rootN=S.roots.map(()=>0),tree=S.roots.map(()=>new Map()),tops=S.roots.map(()=>[])
+  let looseN=0
+  for(const it of items){
+    rootN[it.r]++
+    if(S.roots[it.r]&&S.roots[it.r].file){looseN++;continue}
+    if(!it.dir)continue
+    const T=tree[it.r];let p=''
+    for(const s of it.dir.split('/')){
+      const up=p;p=p?p+'/'+s:s
+      let nd=T.get(p)
+      if(!nd){nd={n:0,kids:[]};T.set(p,nd);(up?T.get(up).kids:tops[it.r]).push(p)}
+      nd.n++
+    }
+  }
+  const nav=(v,t,n,extra='',depth=0)=>`<div class="nav${same(v,S.view)?' on':''}"${depth?` style="padding-left:${10+depth*14}px"`:''} data-v='${esc(JSON.stringify(v))}'>${extra}<span class="name">${esc(t)}</span>${v.k==='root'&&!v.sub?(armed(v)?'<span class="x arm" title="3 秒内再点一下才移出（文件不动）">再点一下移出</span>':'<span class="x" title="移出库（文件不动）：点一下后要再点一下确认">×</span>'):''}<span class="n">${n.toLocaleString()}</span></div>`
+  const G={} // 各组：标题与内容，按人排的顺序拼
+  let h=['all','sfx','music'].map(k=>nav({k},smart[k].t,cnt(k))).join('');G.lib=['库',h]
+  const my=['starred','top','unheard','recent'].map(k=>[k,cnt(k)]).filter(([k,n])=>n&&!(k==='unheard'&&n===items.length)&&!(k==='recent'&&n===items.length))
+  if(my.length)G.my=['我的',my.map(([k,n])=>nav({k},smart[k].t,n)).join('')]
+  const cs=S.cats.map((t,i)=>[t,i,catN[i]]).filter(x=>x[2])
+  if(cs.length)G.cat=['按名字',cs.map(([t,c,n])=>nav({k:'cat',c},t,n)).join('')]
+  const snd=['hit','sus','low','bright','quiet','clip'].map(k=>[k,cnt(k)]).filter(x=>x[1]&&x[1]<items.length*0.9) // 几乎全库都是的，分不出东西，不列
+  if(snd.length)G.snd=['按声音',snd.map(([k,n])=>nav({k},smart[k].t,n)).join('')]
+  if(S.roots.length){
+    h=''
+    const car=(key,has)=>has?`<span class="car${S.open.has(key)?' open':''}" data-car="${esc(key)}">▶</span>`:'<span class="car"></span>'
+    const branch=(i,keys,depth)=>{
+      for(const p of keys.sort((a,b)=>coll.compare(a,b))){
+        const nd=tree[i].get(p),key=S.roots[i].path+'/'+p
+        h+=nav({k:'root',r:i,sub:p},p.slice(p.lastIndexOf('/')+1),nd.n,car(key,nd.kids.length),depth)
+        if(S.open.has(key))branch(i,nd.kids,depth+1)
+      }
+    }
+    S.roots.forEach((r,i)=>{
+      if(r.file)return
+      h+=nav({k:'root',r:i},r.name,rootN[i],car(r.path,tops[i].length))
+      if(S.open.has(r.path))branch(i,tops[i],1)
+    })
+    if(looseN)h+=nav({k:'loose'},'散件',looseN,'<span class="car"></span>')
+    G.dir=['文件夹',h]
+  }
+  $('#side').innerHTML=gOrder().filter(g=>G[g]).map(g=>`<section class="grp${S.fold.has(g)?' fold':''}" data-g="${g}"><div class="h" draggable="true" title="点一下收起或展开，按住拖动换位置"><span class="hc">▶</span>${G[g][0]}</div>${S.fold.has(g)?'':G[g][1]}</section>`).join('')
+}
+// 左栏分组的顺序与收起，记在本机
+const GROUPS=['lib','my','cat','snd','dir']
+function gOrder(){const o=JSON.parse(localStorage.getItem('order')||'[]').filter(g=>GROUPS.includes(g));return [...o,...GROUPS.filter(g=>!o.includes(g))]}
+let gDrag=null
+$('#side').addEventListener('dragstart',e=>{const g=e.target.closest&&e.target.closest('.grp');if(!g||!e.target.classList.contains('h'))return;gDrag=g.dataset.g;selfDrag=true;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',gDrag);g.classList.add('drag')})
+const gClear=()=>$('#side').querySelectorAll('.over-a,.over-b').forEach(x=>x.classList.remove('over-a','over-b'))
+$('#side').addEventListener('dragover',e=>{if(!gDrag)return;e.preventDefault();const g=e.target.closest('.grp');gClear();if(!g||g.dataset.g===gDrag)return;const r=g.getBoundingClientRect();g.classList.add(e.clientY<r.top+Math.min(r.height/2,20)?'over-a':'over-b')})
+$('#side').addEventListener('drop',e=>{if(!gDrag)return;e.preventDefault();e.stopPropagation();const g=e.target.closest('.grp');const after=g&&g.classList.contains('over-b');gClear()
+  if(g&&g.dataset.g!==gDrag){const o=gOrder().filter(x=>x!==gDrag);o.splice(o.indexOf(g.dataset.g)+(after?1:0),0,gDrag);localStorage.setItem('order',JSON.stringify(o));renderSide()}})
+$('#side').addEventListener('dragend',()=>{gDrag=null;selfDrag=false;gClear();$('#side').querySelectorAll('.drag').forEach(x=>x.classList.remove('drag'))})
+$('#side').onclick=e=>{
+  const hd=e.target.closest('.h')
+  if(hd){const g=hd.parentNode.dataset.g;S.fold.has(g)?S.fold.delete(g):S.fold.add(g);localStorage.setItem('fold',JSON.stringify([...S.fold]));renderSide();return}
+  const car=e.target.closest('[data-car]')
+  if(car){const k=car.dataset.car;S.open.has(k)?S.open.delete(k):S.open.add(k);localStorage.setItem('open',JSON.stringify([...S.open]));renderSide();return}
+  const n=e.target.closest('.nav');if(!n)return
+  const v=JSON.parse(n.dataset.v)
+  if(e.target.classList.contains('x')){
+    const r=S.roots[v.r];if(!r)return
+    clearTimeout(armT)
+    if(armX!==r.path){armX=r.path;armT=setTimeout(()=>{armX=null;renderSide()},3000);renderSide();return}
+    armX=null
+    api.call('Lib.Remove',r.path).then(()=>toast('「'+r.name+'」移出库了，文件还在原处',{t:'撤销',f:()=>api.call('Lib.Add',[r.path]).then(()=>toast('「'+r.name+'」放回库了'))}))
+    return
+  }
+  S.view=v;$('#list').scrollTop=0;refresh()
+}
+
+// ---------- 列表 ----------
+function filter(){
+  const f=viewTest(S.view)
+  const qs=S.q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  let out=S.items.filter(it=>{if(!f(it))return false;for(const q of qs)if(!it.hay.includes(q))return false;return true})
+  const {k,dir}=S.sort
+  if(k==='name')out.sort((a,b)=>dir*coll.compare(a.name,b.name))
+  else if(k==='dur')out.sort((a,b)=>dir*((a.d||0)-(b.d||0)))
+  else if(k==='star')out.sort((a,b)=>dir*((b.st||0)-(a.st||0)))
+  return out
+}
+function refresh(){
+  S.list=filter()
+  renderSide()
+  document.querySelectorAll('#cols [data-sort]').forEach(s=>{s.classList.toggle('on',S.sort.k===s.dataset.sort);s.textContent=s.textContent.replace(/ [↑↓]$/,'')+(S.sort.k===s.dataset.sort?(S.sort.dir>0?' ↑':' ↓'):'')})
+  $('#pad').style.height=S.list.length*ROW+'px'
+  const empty=!S.items.length
+  let e=$('.empty');if(empty&&!e){e=document.createElement('div');e.className='empty';e.innerHTML='<div class="big">把文件夹或音效拖进来</div><div>左边会按文件夹、按名字、按声音自己分好</div><div class="acts"><button class="btn" data-pick="dir">载入文件夹</button><button class="btn" data-pick="files">载入文件</button></div>';$('main').append(e)}
+  if(!empty&&e)e.remove()
+  let no=$('.none');const none=!empty&&!S.list.length
+  if(none&&!no){no=document.createElement('div');no.className='none';$('main').append(no)}
+  if(no){if(none)no.textContent=S.q?'没有搜到「'+S.q.trim()+'」':'这里还没有';else no.remove()}
+  pool.forEach(r=>r.dataset.id='')
+  paint()
+  syncPlayer()
+}
+const pool=[]
+function paint(){
+  const L=$('#list'),top=L.scrollTop,h=L.clientHeight
+  const a=Math.max(0,Math.floor(top/ROW)-6),b=Math.min(S.list.length,Math.ceil((top+h)/ROW)+6)
+  while(pool.length<b-a){const r=document.createElement('div');r.className='row';r.innerHTML='<span class="pl"></span><span class="t"></span><canvas></canvas><span class="f"></span><span class="stars"></span><span class="fm"></span><span class="d"></span>';$('#pad').append(r);pool.push(r)}
+  for(let i=0;i<pool.length;i++){
+    const r=pool[i],idx=a+i
+    if(idx>=b){r.style.display='none';r.dataset.id='';continue}
+    const it=S.list[idx]
+    r.style.display='';r.style.transform=`translateY(${idx*ROW}px)`
+    const key=it.id+':'+it.d+':'+it.st+':'+it.a+':'+it.x+':'+(it.v?it.v.length:0)+':'+(it.no||'')+':'+(it.du?it.du.length:0)
+    if(r.dataset.id!==key&&!(kwEd&&kwEd.row===r&&kwEd.it===it)){
+      r.dataset.id=key;r.dataset.i=idx
+      const c=r.children
+      const sub=S.view.k==='root'&&S.view.sub?it.dir.slice(S.view.sub.length+1):it.dir
+      c[1].innerHTML=esc(it.name)+(it.no?'<em class="kw" title="点一下改关键字">'+esc(it.no)+'</em>':'<em class="kw add" title="写关键字（不改文件名，可搜索）">＋</em>')+(sub?'<small>'+esc(sub)+'</small>':'')+(it.du?'<small class="du">另有 '+it.du.length+' 份</small>':'')
+      drawMini(c[2],it)
+      c[3].textContent=it.rootName
+      c[4].className='stars'+(it.st?' has':'');c[4].innerHTML=starHTML(it.st)
+      c[5].textContent=fmtCol(it)
+      c[6].textContent=fmt(it.d)
+      r.title=[it.no,it.tx,it.du&&('内容一样的另几份，不另列：\n'+it.du.join('\n'))].filter(Boolean).join('\n')
+      r.draggable=false
+    }
+    r.dataset.i=idx
+    r.classList.toggle('on',S.sel.has(it.id))
+    r.classList.toggle('now',S.now===it.id)
+    r.classList.toggle('paused',S.now===it.id&&audio.paused)
+    r.classList.toggle('bad',!!it.x)
+  }
+}
+// 行内小波形：48 个峰，按本条自己的峰归一
+let MINI=''
+function envOf(it){if(it._src!==it.v){it._src=it.v;it._env=it.v?b64(it.v):null}return it._env}
+function drawMini(cv,it){
+  const dpr=devicePixelRatio||1,w=72,h=20
+  if(cv.width!==w*dpr){cv.width=w*dpr;cv.height=h*dpr}
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h)
+  const e=envOf(it);if(!e||!e.length)return
+  if(!MINI)MINI=getComputedStyle(document.documentElement).getPropertyValue('--mute')
+  g.fillStyle=MINI;g.globalAlpha=.55
+  const bw=w/e.length
+  for(let i=0;i<e.length;i++){const bh=Math.max(1,e[i]/255*(h-2));g.fillRect(i*bw,(h-bh)/2,Math.max(.8,bw-.6),bh)}
+}
+function repaintRows(){MINI='';pool.forEach(r=>r.dataset.id='');paint()}
+const starHTML=n=>[1,2,3,4,5].map(i=>`<i data-s="${i}" class="${i<=n?'on':''}">${i<=n?'★':'☆'}</i>`).join('')
+function fmtCol(it){
+  let s=it.e.toUpperCase()
+  if(it.b)s+=' '+it.b
+  if(it.sr)s+=(it.b?'/':' ')+(it.sr%1000?(it.sr/1000).toFixed(1):it.sr/1000)+'k'
+  return s
+}
+let pr=0
+$('#list').addEventListener('scroll',()=>{if(kwEd)kwEd.inp.blur();if(!pr)pr=requestAnimationFrame(()=>{pr=0;paint()})},{passive:true})
+addEventListener('resize',()=>{paint();drawView()})
+
+function rowAt(e){const r=e.target.closest('.row');return r?S.list[+r.dataset.i]:null}
+let rd=null // 按在某行上：拖过 5 像素就拖出去
+$('#list').addEventListener('mousedown',e=>{
+  const it=rowAt(e);if(!it||e.button!==0)return
+  if(e.target.closest('.kwin'))return
+  if(e.target.closest('.kw')){e.preventDefault();kwEdit(e.target.closest('.row'),it);return}
+  const st=e.target.closest('.stars i')
+  if(st){const n=+st.dataset.s;rate(S.sel.has(it.id)&&S.sel.size>1?[...S.sel]:[it.id],it.st===n&&S.sel.size<=1?0:n);return}
+  rd={it,x:e.clientX,y:e.clientY,defer:false}
+  // 按在多选里的一条上先不收拢，松手时没拖才收拢，这样能把多条一起拖走
+  if(!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&S.sel.size>1&&S.sel.has(it.id)){rd.defer=true;return}
+  if(e.metaKey||e.ctrlKey){S.sel.has(it.id)?S.sel.delete(it.id):S.sel.add(it.id);S.anchor=it.id;S.cur=it.id;paint();syncPlayer();return}
+  if(e.shiftKey&&S.anchor!=null){
+    const i0=S.list.findIndex(x=>x.id===S.anchor),i1=S.list.indexOf(it)
+    if(i0>=0){S.sel=new Set(S.list.slice(Math.min(i0,i1),Math.max(i0,i1)+1).map(x=>x.id));S.cur=it.id;paint();syncPlayer();return}
+  }
+  if(S.cur===it.id&&S.sel.size===1&&S.sel.has(it.id)){rd.toggle=true;return} // 松手时没拖才切换播放，拖走时不打断
+  select(it,S.auto)
+})
+addEventListener('mousemove',e=>{
+  if(!rd)return
+  if(!(e.buttons&1)){rd=null;return}
+  if(!canDragOut||Math.hypot(e.clientX-rd.x,e.clientY-rd.y)<5)return
+  const it=rd.it,ids=S.sel.has(it.id)?[...S.sel]:[it.id];rd=null;selfDrag=true
+  api.call('App.Drag',ids).catch(err=>toast(String(err.message||err)))
+})
+addEventListener('mouseup',()=>{if(rd&&rd.defer)select(rd.it,S.auto);if(rd&&rd.toggle)toggle();rd=null})
+$('#list').addEventListener('dblclick',e=>{const it=rowAt(e);if(it&&!e.target.closest('.stars,.kw,.kwin'))start(it)})
+// 名字后面写关键字：只记在 App 里（与底栏批注同一处），文件名不动，搜索能搜到
+let kwEd=null
+function kwSave(it,v){v=v.trim();if(v===(it.no||''))return;it.no=v;prep(it);api.call('Lib.SetNote',it.id,v);if(S.q)refresh();syncPlayer()}
+function kwEdit(r,it){
+  if(kwEd)kwEd.inp.blur()
+  const c=r.children[1],inp=document.createElement('input')
+  inp.className='kwin';inp.value=it.no||'';inp.placeholder='关键字，空格隔开';inp.spellcheck=false
+  c.querySelector('.kw').replaceWith(inp);r.draggable=false
+  kwEd={row:r,it,inp}
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=it.no||'';inp.blur()}})
+  inp.addEventListener('blur',()=>{if(!kwEd||kwEd.inp!==inp)return;kwEd=null;kwSave(it,inp.value);r.dataset.id='';paint()})
+  inp.focus();inp.select()
+}
+let selfDrag=false
+$('#list').addEventListener('dragstart',e=>e.preventDefault()) // 行不走 HTML5 拖拽，拖出由上面的原生拖出接
+// 原生拖出期间页面收不到鼠标移动；拖完鼠标再动、键已松开，就算拖完了
+addEventListener('mousemove',e=>{if(selfDrag&&!gDrag&&!(e.buttons&1))selfDrag=false})
+$('#list').addEventListener('contextmenu',e=>{
+  e.preventDefault()
+  const it=rowAt(e);if(!it)return
+  if(!S.sel.has(it.id)){S.sel=new Set([it.id]);S.anchor=it.id;S.cur=it.id;paint();syncPlayer()}
+  const ids=[...S.sel]
+  if(inApp)api.call('App.Menu',ids)
+  else ctxMenu(e.clientX,e.clientY,ids)
+})
+function select(it,play){
+  if(S.reg&&S.reg.id!==it.id){S.reg=null;syncReg()}
+  S.sel=new Set([it.id]);S.anchor=it.id;S.cur=it.id
+  paint();syncPlayer()
+  if(play)start(it)
+}
+function moveBy(d){
+  if(!S.list.length)return
+  let i=S.list.findIndex(x=>x.id===S.cur)
+  i=i<0?0:Math.max(0,Math.min(S.list.length-1,i+d))
+  const it=S.list[i];select(it,S.auto);reveal(i)
+}
+function reveal(i){
+  const L=$('#list'),y=i*ROW
+  if(y<L.scrollTop)L.scrollTop=y
+  else if(y+ROW>L.scrollTop+L.clientHeight)L.scrollTop=y+ROW-L.clientHeight
+}
+$('#cols').onclick=e=>{
+  const k=e.target.dataset.sort;if(!k)return
+  if(S.sort.k!==k)S.sort={k,dir:1}
+  else if(S.sort.dir>0)S.sort.dir=-1
+  else S.sort={k:'',dir:1}
+  refresh()
+}
+
+// ---------- 播放 ----------
+// 声音走 Web Audio 的增益：换条先 30 毫秒淡出，新的一条 10 毫秒淡入，不咔哒
+let actx=null,gain=null,pseq=0
+const level=()=>S.vol*S.vol
+function ensureCtx(){
+  if(!actx){try{actx=new AudioContext();gain=actx.createGain();gain.gain.value=level();actx.createMediaElementSource(audio).connect(gain);gain.connect(actx.destination)}catch{actx=gain=null}}
+  if(actx&&actx.state==='suspended')actx.resume()
+}
+function fadeTo(v,ms){
+  if(!gain){audio.volume=Math.min(1,v);return Promise.resolve()}
+  const t=actx.currentTime,g=gain.gain
+  g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(v,t+ms/1000)
+  return new Promise(r=>setTimeout(r,ms))
+}
+async function resume(){
+  ensureCtx();++pseq
+  if(gain)gain.gain.setValueAtTime(0,actx.currentTime)
+  await audio.play();fadeTo(level(),10)
+}
+function softPause(){const my=++pseq;return fadeTo(0,30).then(()=>{if(my===pseq)audio.pause()})}
+function applyLoop(){audio.loop=S.loop&&!(S.reg&&S.reg.id===S.now);$('#loop').classList.toggle('on',S.loop)}
+let blobURL='',loadSeq=0
+async function start(it,at=0){
+  const my=++loadSeq
+  ensureCtx()
+  if(!audio.paused){await softPause();if(my!==loadSeq)return}
+  S.now=it.id;S.detail=null;drawView()
+  audio.pause();applyLoop()
+  loadDetail(it)
+  const tryLoad=async kind=>{
+    const r=await fetch(SND+kind+'/'+it.id);if(!r.ok)throw new Error(r.status)
+    const b=await r.blob();if(my!==loadSeq)return false
+    if(blobURL)URL.revokeObjectURL(blobURL)
+    blobURL=URL.createObjectURL(b);audio.src=blobURL
+    await new Promise((ok,no)=>{audio.oncanplay=ok;audio.onerror=no})
+    return true
+  }
+  try{
+    let ok
+    try{ok=await tryLoad('f')}catch{if(my!==loadSeq||!S.conv.length)throw 0;ok=await tryLoad('t')}
+    if(!ok||my!==loadSeq)return
+    if(at)audio.currentTime=at
+    await resume()
+    if(!it.pl){it.pl=1;api.call('Lib.Played',it.id);}else it.pl++
+  }catch{if(my===loadSeq){toast('这一条放不了');paint()}}
+}
+function toggle(){
+  if(!S.now){const it=S.byId.get(S.cur)||S.list[0];if(it)select(it,true);return}
+  if(S.cur!==S.now){const it=S.byId.get(S.cur);if(it){start(it);return}}
+  audio.paused?resume():softPause()
+}
+audio.onplay=audio.onpause=()=>{$('#pp').textContent=audio.paused?'▶':'❚❚';paint()}
+audio.onended=()=>{$('#pp').textContent='▶';paint()}
+let raf=0
+function tick(){
+  const R=S.reg
+  if(R&&R.id===S.now&&audio.currentTime>=R.b&&!R.stop){ // 选了一段：到段尾就回段头，开着循环就接着放；不循环就淡出停在段头
+    if(S.loop)audio.currentTime=R.a
+    else{R.stop=true;softPause().then(()=>{audio.currentTime=R.a;R.stop=false})}
+  }
+  $('#tm').textContent=fmt(audio.currentTime)
+  drawView()
+  raf=audio.paused?0:requestAnimationFrame(tick)
+}
+audio.addEventListener('play',()=>{if(!raf)raf=requestAnimationFrame(tick)})
+audio.addEventListener('seeked',()=>{$('#tm').textContent=fmt(audio.currentTime);drawView()})
+$('#pp').onclick=toggle
+
+// ---------- 底栏：名、数、星、波形／频谱、批注 ----------
+function syncPlayer(){
+  const id=S.sel.size>1?null:(S.cur??S.now)
+  const it=S.byId.get(id)
+  const P=$('#player')
+  if(S.sel.size>1){P.hidden=false;$('#pn').textContent='选了 '+S.sel.size+' 个';$('#pm').textContent='数字键打分 · 右键转格式';$('#pst').innerHTML='';$('#note').style.visibility='hidden';$('#view').style.visibility='hidden';$('#seg').style.visibility='hidden';return}
+  if(!it){P.hidden=true;return}
+  P.hidden=false
+  $('#note').style.visibility=$('#view').style.visibility=$('#seg').style.visibility=''
+  $('#pn').textContent=it.name
+  const m=[]
+  if(it.sr)m.push((it.sr/1000)+' kHz')
+  if(it.b)m.push(it.b+' bit')
+  if(it.ch)m.push(it.ch===1?'单声道':it.ch===2?'立体声':it.ch+' 声道')
+  m.push(fmt(it.d))
+  if(it.a&&it.pk>-180)m.push('峰 '+it.pk.toFixed(1)+' dB')
+  if(it.a&&it.rm>-180)m.push('均 '+it.rm.toFixed(1)+' dB')
+  $('#pm').textContent=m.join(' · ')
+  $('#pst').innerHTML=starHTML(it.st)
+  if(document.activeElement!==$('#note'))$('#note').value=it.no||''
+  if(S.cur!==S.now&&(!S.detail||S.detail.id!==it.id))loadDetail(it)
+  else drawView()
+}
+const b64=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+let detSeq=0
+async function loadDetail(it){
+  const my=++detSeq
+  if(S.detail&&S.detail.id!==it.id){S.detail=null;drawView()}
+  try{
+    const d=await api.call('Lib.Detail',it.id)
+    if(my!==detSeq)return
+    S.detail={id:it.id,wave:b64(d.wave),spec:b64(d.spec),cols:d.cols,rows:d.rows,lo:d.lo,hi:d.hi,dur:d.dur,img:null}
+  }catch{if(my===detSeq)S.detail={id:it.id,wave:new Uint8Array(0),spec:null}}
+  drawView()
+}
+// 色带：底色 → 深 → 橙（强调色）→ 浅黄白，强的地方才亮
+function ramp(dark){
+  const stops=dark?[[21,21,21],[40,32,60],[150,40,60],[255,91,31],[255,230,170]]:[[251,251,250],[214,212,226],[176,86,120],[255,91,31],[90,20,10]]
+  const out=new Uint8Array(256*3)
+  for(let i=0;i<256;i++){
+    const t=i/255*(stops.length-1),k=Math.min(stops.length-2,Math.floor(t)),f=t-k
+    for(let c=0;c<3;c++)out[i*3+c]=stops[k][c]+(stops[k+1][c]-stops[k][c])*f
+  }
+  return out
+}
+const isDark=()=>getComputedStyle(document.documentElement).getPropertyValue('color-scheme').includes('dark')
+function specImage(d){
+  const dark=isDark()
+  if(d.img&&d.imgDark===dark)return d.img
+  const cv=document.createElement('canvas');cv.width=d.cols;cv.height=d.rows
+  const g=cv.getContext('2d'),im=g.createImageData(d.cols,d.rows),rp=ramp(dark)
+  for(let c=0;c<d.cols;c++)for(let r=0;r<d.rows;r++){
+    let v=d.spec[c*d.rows+r]
+    v=Math.max(0,Math.min(255,Math.round((v-70)*255/185))) // 底下 -70 dB 以下的淡掉
+    const o=((d.rows-1-r)*d.cols+c)*4
+    im.data[o]=rp[v*3];im.data[o+1]=rp[v*3+1];im.data[o+2]=rp[v*3+2];im.data[o+3]=255
+  }
+  g.putImageData(im,0,0);d.img=cv;d.imgDark=dark
+  return cv
+}
+function drawReg(g,w,h,id){
+  const R=S.reg,it=S.byId.get(id);if(!R||R.id!==id||!it||!(it.d>0))return
+  const x0=R.a/it.d*w,x1=R.b/it.d*w,ac=getComputedStyle(document.documentElement).getPropertyValue('--acc')
+  g.fillStyle=ac;g.globalAlpha=.13;g.fillRect(x0,0,x1-x0,h);g.globalAlpha=1
+  g.fillRect(Math.round(x0),0,1,h);g.fillRect(Math.round(x1)-1,0,1,h)
+}
+function drawView(){
+  const cv=$('#view');if($('#player').hidden)return
+  const dpr=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight
+  if(cv.width!==w*dpr||cv.height!==h*dpr){cv.width=w*dpr;cv.height=h*dpr}
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h)
+  const css=getComputedStyle(document.documentElement)
+  const id=S.sel.size>1?null:(S.cur??S.now)
+  const d=S.detail&&S.detail.id===id?S.detail:null
+  document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.mode))
+  const playing=S.now===id&&audio.duration>0
+  const pos=playing?audio.currentTime/audio.duration:0
+  if(!d){g.fillStyle=css.getPropertyValue('--line');g.fillRect(0,h/2,w,1);return}
+  if(S.mode==='spec'&&d.spec){
+    g.imageSmoothingEnabled=true
+    g.drawImage(specImage(d),0,0,w,h)
+    if(playing){g.fillStyle=css.getPropertyValue('--text');g.fillRect(Math.round(pos*w),0,1,h)}
+    drawReg(g,w,h,id)
+    return
+  }
+  const n=d.wave.length;if(!n)return
+  const bars=Math.max(1,Math.floor(w/3)),mid=h/2
+  const wc=css.getPropertyValue('--wave'),ac=css.getPropertyValue('--acc')
+  for(let i=0;i<bars;i++){
+    const a=Math.floor(i*n/bars),b=Math.max(a+1,Math.floor((i+1)*n/bars))
+    let m=0;for(let k=a;k<b;k++)if(d.wave[k]>m)m=d.wave[k]
+    const bh=Math.max(1,m/255*(h-4))
+    g.fillStyle=playing&&i/bars<pos?ac:wc
+    g.fillRect(i*3,mid-bh/2,2,bh)
+  }
+  drawReg(g,w,h,id)
+}
+// 波形上：点一下跳过去放；横拖出一段（试听、循环、导出）；按在这段里拖出窗口，就把这段截好拖走
+let vd=null
+const clamp01=x=>Math.max(0,Math.min(1,x))
+$('#view').addEventListener('mousedown',e=>{
+  if(e.button!==0)return
+  const id=S.cur??S.now,it=S.byId.get(id);if(!it||!(it.d>0))return
+  const r=e.currentTarget.getBoundingClientRect(),t=clamp01((e.clientX-r.left)/r.width)*it.d
+  vd={it,r,x0:e.clientX,t0:t,inReg:!!(S.reg&&S.reg.id===id&&t>=S.reg.a&&t<=S.reg.b),moved:false}
+})
+addEventListener('mousemove',e=>{
+  if(!vd)return
+  if(!(e.buttons&1)){vd=null;return}
+  if(!vd.moved&&Math.abs(e.clientX-vd.x0)<=4)return
+  vd.moved=true
+  if(vd.inReg){
+    if(canDragOut&&!vd.out){vd.out=true;selfDrag=true;const R=S.reg;api.call('App.DragClip',R.id,R.a,R.b).catch(err=>toast(String(err.message||err)));vd=null}
+    return
+  }
+  const t=clamp01((e.clientX-vd.r.left)/vd.r.width)*vd.it.d
+  S.reg={id:vd.it.id,a:Math.min(vd.t0,t),b:Math.max(vd.t0,t)};syncReg();drawView()
+})
+addEventListener('mouseup',()=>{
+  if(!vd)return
+  const v=vd;vd=null
+  if(v.moved||v.inReg){if(S.reg)playFrom(v.it,S.reg.a);return}
+  if(S.reg){S.reg=null;syncReg()}
+  playFrom(v.it,v.t0)
+})
+function playFrom(it,t){
+  applyLoop()
+  if(S.now===it.id&&audio.duration>0){audio.currentTime=t;if(audio.paused)resume();drawView()}
+  else start(it,t)
+}
+const fmtT=s=>s<60?s.toFixed(2)+'s':Math.floor(s/60)+':'+(s%60).toFixed(2).padStart(5,'0')
+function syncReg(){
+  const R=S.reg,el=$('#reg')
+  el.hidden=!R
+  if(R)$('#regt').textContent=fmtT(R.a)+' – '+fmtT(R.b)
+  applyLoop()
+}
+$('#regx').onclick=async()=>{
+  const R=S.reg;if(!R)return
+  try{const p=await api.call('Lib.Clip',R.id,R.a,R.b);toast('这段放进导出夹了：'+p.slice(p.lastIndexOf('/')+1))}catch(err){toast(String(err.message||err))}
+}
+$('#loop').onclick=()=>{S.loop=!S.loop;localStorage.setItem('loop',S.loop?'1':'0');applyLoop()}
+$('#auto').onclick=()=>{S.auto=!S.auto;localStorage.setItem('auto',S.auto?'1':'0');$('#auto').classList.toggle('on',S.auto)}
+$('#vol').value=S.vol
+$('#vol').onchange=e=>e.target.blur() // 调完音量把焦点还给列表，空格照样能放
+$('#vol').oninput=e=>{S.vol=+e.target.value;localStorage.setItem('vol',S.vol);if(gain)gain.gain.setTargetAtTime(level(),actx.currentTime,.01);else audio.volume=level()}
+$('#auto').classList.toggle('on',S.auto);applyLoop()
+$('#seg').onclick=e=>{const v=e.target.dataset.v;if(v){S.mode=v;localStorage.setItem('mode',v);drawView()}}
+$('#pst').onclick=e=>{const s=e.target.closest('i');const it=S.byId.get(S.cur??S.now);if(s&&it){const n=+s.dataset.s;rate([it.id],it.st===n?0:n)}}
+$('#note').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'||e.key==='Escape'){if(e.key==='Escape'){const it=S.byId.get(S.cur??S.now);if(it)e.target.value=it.no||''}e.target.blur()}})
+$('#note').addEventListener('blur',e=>{
+  const it=S.byId.get(S.cur??S.now);if(!it)return
+  const v=e.target.value.trim();if(v===(it.no||''))return
+  it.no=v;prep(it);api.call('Lib.SetNote',it.id,v);paint();toast('记下了')
+})
+
+function rate(ids,n){
+  for(const id of ids){const it=S.byId.get(id);if(it)it.st=n}
+  api.call('Lib.Rate',ids,n)
+  paint();syncPlayer();renderSide()
+}
+
+// ---------- 浏览器里看时的右键（App 里是原生菜单）----------
+function ctxMenu(x,y,ids){
+  closeCtx()
+  const m=document.createElement('div');m.className='ctx'
+  let h='<div class="lab">打分</div>'+[5,4,3,2,1].map(s=>`<button data-rate="${s}">${'★'.repeat(s)+'☆'.repeat(5-s)}</button>`).join('')+'<button data-rate="0">清掉星</button>'
+  if(S.conv.length)h+='<hr><div class="lab">'+(ids.length>1?'这 '+ids.length+' 个转成':'转成')+'</div>'+S.conv.map(f=>`<button data-conv="${f.id}">${esc(f.label)}</button>`).join('')
+  m.innerHTML=h;document.body.append(m)
+  m.style.left=Math.min(x,innerWidth-m.offsetWidth-8)+'px';m.style.top=Math.min(y,innerHeight-m.offsetHeight-8)+'px'
+  m.onclick=async e=>{
+    const b=e.target.closest('button');if(!b)return
+    closeCtx()
+    if(b.dataset.rate)rate(ids,+b.dataset.rate)
+    if(b.dataset.conv){
+      try{const r=await api.call('Lib.Convert',ids,b.dataset.conv);toast(r.failed.length?r.done+' 个转好，'+r.failed.length+' 个没转成':r.done+' 个转好，放进导出夹')}catch(err){toast(String(err.message||err))}
+    }
+  }
+}
+function closeCtx(){document.querySelectorAll('.ctx').forEach(x=>x.remove())}
+addEventListener('mousedown',e=>{if(!e.target.closest('.ctx'))closeCtx()},true)
+
+// ---------- 载入与拖入 ----------
+$('#load').onclick=e=>{e.stopPropagation();$('#menu').classList.toggle('open')}
+addEventListener('click',()=>$('#menu').classList.remove('open'))
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(b)pick(b.dataset.pick)})
+const reveal2=isWin?'在资源管理器中显示导出夹':'在访达中显示导出夹'
+$('#outshow').textContent=reveal2
+function showOut(){const p=S.out,el=$('#outp');el.textContent='导出夹 · '+p.split(/[\\/]/).filter(Boolean).slice(-2).join('/');el.title=p}
+$('#outpick').onclick=async()=>{
+  if(!inApp){toast('在浏览器里看时换不了，请用 App');return}
+  try{S.out=await api.call('App.PickOut');showOut()}catch(e){toast(String(e.message||e))}
+}
+$('#outshow').onclick=()=>{if(!inApp){toast('导出夹在 '+S.out);return}api.call('App.ShowOut').catch(e=>toast(String(e.message||e)))}
+async function pick(k){
+  if(!inApp){toast('在浏览器里看时载入不了，请用 App');return}
+  try{const n=await api.call('App.Pick',k==='dir');if(n)toast('收进来了')}catch(e){toast(String(e.message||e))}
+}
+let dragDepth=0
+const hasFiles=e=>[...(e.dataTransfer?.types||[])].includes('Files')
+addEventListener('dragenter',e=>{if(hasFiles(e)&&!selfDrag){e.preventDefault();dragDepth++;$('#drop').classList.add('on')}})
+addEventListener('dragover',e=>{if(hasFiles(e))e.preventDefault()})
+addEventListener('dragleave',()=>{if(--dragDepth<=0){dragDepth=0;$('#drop').classList.remove('on')}})
+addEventListener('drop',e=>{e.preventDefault();dragDepth=0;$('#drop').classList.remove('on');if(!inApp)toast('在浏览器里看时拖不进来，请用 App')})
+
+// ---------- 搜索与键 ----------
+let qt=0
+$('#q').addEventListener('input',e=>{S.q=e.target.value;clearTimeout(qt);qt=setTimeout(()=>{$('#list').scrollTop=0;refresh()},S.items.length>5000?60:0)})
+$('#q').addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.target.value='';S.q='';refresh();e.target.blur()}
+  else if(e.key==='ArrowDown'||e.key==='Enter'){e.preventDefault();e.target.blur();moveBy(S.cur?0:1)}
+  e.stopPropagation()
+})
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return
+  const k=e.key
+  if(k===' '){e.preventDefault();toggle()}
+  else if(k==='ArrowDown'||k==='j'){e.preventDefault();moveBy(1)}
+  else if(k==='ArrowUp'||k==='k'){e.preventDefault();moveBy(-1)}
+  else if(k==='ArrowLeft'){e.preventDefault();if(S.now)audio.currentTime=0}
+  else if(k==='/'||((e.metaKey||e.ctrlKey)&&k==='f')){e.preventDefault();$('#q').focus();$('#q').select()}
+  else if(k==='Escape'&&S.reg){S.reg=null;syncReg();drawView()}
+  else if(k==='Escape'){if(S.sel.size>1){const it=S.byId.get(S.cur);S.sel=new Set(it?[it.id]:[]);paint();syncPlayer()}else if(S.q){$('#q').value='';S.q='';refresh()}}
+  else if(/^[0-5]$/.test(k)&&!e.metaKey&&!e.ctrlKey){const ids=S.sel.size?[...S.sel]:(S.cur?[S.cur]:[]);if(ids.length)rate(ids,+k)}
+  else if((k==='Backspace'||k==='Delete')&&inApp&&(isWin||e.metaKey)){e.preventDefault();const ids=S.sel.size?[...S.sel]:(S.cur?[S.cur]:[]);if(ids.length)api.call('App.Trash',ids).then(n=>toast(n+' 个副本已'+(isWin?'移到回收站':'移到废纸篓'))).catch(err=>toast(String(err.message||err)))}
+  else if(k==='s'||k==='S'){S.mode=S.mode==='wave'?'spec':'wave';localStorage.setItem('mode',S.mode);drawView()}
+  else if((e.metaKey||e.ctrlKey)&&k==='a'){e.preventDefault();S.sel=new Set(S.list.map(x=>x.id));paint();syncPlayer()}
+})
+
+// ---------- 明暗 ----------
+const themes=['auto','light','dark']
+function applyTheme(t){if(inApp)api.call('App.Theme',t).catch(()=>{});if(t==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);$('#theme').title={auto:'跟系统',light:'亮',dark:'暗'}[t];drawView();repaintRows()}
+$('#theme').onclick=()=>applyTheme(themes[(themes.indexOf(localStorage.getItem('theme')||'auto')+1)%3])
+applyTheme(localStorage.getItem('theme')||'auto')
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{drawView();repaintRows()})
+
+// ---------- 事件 ----------
+let pt=0
+api.on('lib',()=>reload())
+api.on('items',patch)
+api.on('toast',toast)
+api.on('progress',p=>{
+  const el=$('#prog')
+  if(!p.total||p.done>=p.total){el.textContent=p.total?p.phase+'好了':'';clearTimeout(pt);pt=setTimeout(()=>el.classList.add('off'),1200);return}
+  clearTimeout(pt);el.classList.remove('off')
+  el.textContent=p.phase+' '+p.done.toLocaleString()+' / '+p.total.toLocaleString()
+})
+reload()
+</script>
+</body>
+</html>
